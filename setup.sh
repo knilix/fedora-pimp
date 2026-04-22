@@ -4,18 +4,21 @@
 # FEDORA PIMP MY SYSTEM - ULTIMATE GAMING & STREAMING SETUP
 # Ziel: Annähernde Bazzite-Funktionalität auf Workstation-Basis
 # Fokus: AMD Ryzen 9700X + Radeon 7800 XT
-# For Fedora only
-# Only Test for Fedora 43
-# Mainener: @Knilix
-# V1.04
+# Maintenancener: @Knilix & Gemini
+# V1.06
 ################################################################################
+
 # Prüfen, ob als root ausgeführt
 if [ "$EUID" -ne 0 ]; then
   echo "FEHLER: Bitte starte das Script mit sudo!"
   exit 1
 fi
 
-echo "Starte System-Optimierung..."
+# Den echten User ermitteln (für Config-Dateien)
+REAL_USER=${SUDO_USER:-$USER}
+USER_HOME=$(eval echo "~$REAL_USER")
+
+echo "Starte System-Optimierung für User: $REAL_USER..."
 
 # 1. DNF Optimierung
 if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
@@ -38,12 +41,13 @@ dnf swap -y ffmpeg-free ffmpeg --allowerasing
 dnf install -y libva-utils vdpauinfo
 dnf update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
 
-# 4. Gaming Essentials & Discord
+# 4. Gaming Essentials & 32-Bit Support (Wichtig für Steam/Proton)
 dnf install -y steam steam-devices discord mangohud goverlay gamemode gamescope \
-lutris wine winetricks liberation-fonts cabextract protontricks flatpak
+lutris wine winetricks liberation-fonts cabextract protontricks flatpak \
+mesa-dri-drivers.i686 mesa-vulkan-drivers.i686 mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld
 
 # 5. Vulkan & Mesa
-dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-validation-layers
+dnf install -y mesa-vulkan-drivers vulkan-tools vulkan-validation-layers
 
 # 6. OBS Studio
 dnf install -y obs-studio obs-studio-plugin-vaapi
@@ -53,9 +57,9 @@ dnf remove -y tuned tuned-ppd
 dnf install -y power-profiles-daemon
 systemctl enable --now power-profiles-daemon
 
-# 8. PipeWire Low Latency
-mkdir -p ~/.config/pipewire/pipewire.conf.d
-cat <<'EOF' > ~/.config/pipewire/pipewire.conf.d/99-lowlatency.conf
+# 8. PipeWire Low Latency (Korrektes User-Verzeichnis)
+mkdir -p "$USER_HOME/.config/pipewire/pipewire.conf.d"
+cat <<'EOF' > "$USER_HOME/.config/pipewire/pipewire.conf.d/99-lowlatency.conf"
 context.properties = {
     default.clock.rate = 48000
     default.clock.quantum = 512
@@ -64,8 +68,8 @@ context.properties = {
 EOF
 
 # 9. Configs (GameMode & MangoHud)
-mkdir -p ~/.config/MangoHud
-cat <<'EOF' > ~/.config/gamemode.ini
+mkdir -p "$USER_HOME/.config/MangoHud"
+cat <<'EOF' > "$USER_HOME/.config/gamemode.ini"
 [general]
 renice=10
 [cpu]
@@ -76,7 +80,7 @@ gpu_device=0
 amd_performance_level=high
 EOF
 
-cat <<'EOF' > ~/.config/MangoHud/MangoHud.conf
+cat <<'EOF' > "$USER_HOME/.config/MangoHud/MangoHud.conf"
 fps
 frametime
 gpu_stats
@@ -89,13 +93,19 @@ position=top-left
 toggle_hud=F12
 EOF
 
-# 10. System Tweaks
+# Rechte für die Config-Dateien wieder dem User geben
+chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/pipewire"
+chown -R "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/MangoHud"
+chown "$REAL_USER":"$REAL_USER" "$USER_HOME/.config/gamemode.ini"
+
+# 10. System Tweaks (Inkl. Memory Map für moderne Games)
 tee /etc/sysctl.d/90-boost.conf <<'EOF'
 kernel.nmi_watchdog=0
 vm.swappiness=10
 vm.dirty_background_bytes=134217728
 vm.dirty_bytes=268435456
 fs.inotify.max_user_watches=524288
+vm.max_map_count=2147483642
 EOF
 sysctl --system
 
@@ -109,5 +119,5 @@ flatpak install -y flathub \
     com.termius.Termius
 
 echo "----------------------------------------------------------------------"
-echo "Setup V1.06 abgeschlossen! Alles erledigt."
+echo "Setup V1.05 abgeschlossen! Alles erledigt."
 echo "----------------------------------------------------------------------"
