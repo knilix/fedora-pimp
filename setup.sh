@@ -11,6 +11,12 @@
 ################################################################################
 echo "Starte System-Optimierung..."
 
+# Erpringe Root-Rechte sofort
+if [ "$EUID" -ne 0 ]; then
+  echo "Starte das Skript mit sudo oder als root."
+  exec sudo bash "$0" "$@"
+fi
+
 # 1. DNF & System Update
 sudo tee -a /etc/dnf/dnf.conf <<'EOF'
 max_parallel_downloads=10
