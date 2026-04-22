@@ -7,11 +7,11 @@
 # For Fedora only
 # Only Test for Fedora 43
 # Mainener: @Knilix
-# V1.00
+# V1.01
 ################################################################################
 echo "Starte System-Optimierung..."
 
-# Erpringe Root-Rechte sofort
+# Erbringe Root-Rechte sofort
 if [ "$EUID" -ne 0 ]; then
   echo "Starte das Skript mit sudo oder als root."
   exec sudo bash "$0" "$@"
