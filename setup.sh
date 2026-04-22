@@ -17,11 +17,10 @@ if [ "$EUID" -ne 0 ]; then
   exec sudo bash "$0" "$@"
 fi
 
-# 1. DNF & System Update
-sudo tee -a /etc/dnf/dnf.conf <<'EOF'
-max_parallel_downloads=10
-fastestmirror=True
-EOF
+# 1. DNF & System Update (Sicheres Hinzufügen)
+if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
+  echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
+fi
 
 sudo dnf update -y
 sudo fwupdmgr refresh && sudo fwupdmgr update
