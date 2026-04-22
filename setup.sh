@@ -7,15 +7,15 @@
 # For Fedora only
 # Only Test for Fedora 43
 # Mainener: @Knilix
-# V1.01
+# V1.02
 ################################################################################
 echo "Starte System-Optimierung..."
 
-# Erbringe Root-Rechte sofort
-if [ "$EUID" -ne 0 ]; then
-  echo "Starte das Skript mit sudo oder als root."
-  exec sudo bash "$0" "$@"
-fi
+# 0. Sudo-Check (Sofort am Start)
+echo "Überprüfe Berechtigungen..."
+sudo -v
+# Hält das Sudo-Passwort aktuell, während das Skript läuft
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 # 1. DNF & System Update (Sicheres Hinzufügen)
 if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
