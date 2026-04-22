@@ -7,14 +7,16 @@
 # For Fedora only
 # Only Test for Fedora 43
 # Mainener: @Knilix
-# V1.02
+# V1.03
 ################################################################################
 echo "Starte System-Optimierung..."
 
 # 0. Sudo-Check (Sofort am Start)
 echo "Überprüfe Berechtigungen..."
-sudo -v
-# Hält das Sudo-Passwort aktuell, während das Skript läuft
+# Fragt sofort das Passwort ab, ohne das Skript neu zu starten
+sudo -v || exit 1
+
+# Hält den Sudo-Status aktiv (Keep-alive)
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 # 1. DNF & System Update (Sicheres Hinzufügen)
